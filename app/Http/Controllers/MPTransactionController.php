@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MPTransaction;
 use Illuminate\Http\Request;
 
-class MPTransactionController extends Controller
+class MpTransactionController extends Controller
 {
     /**
      * Display a listing of the resource.
