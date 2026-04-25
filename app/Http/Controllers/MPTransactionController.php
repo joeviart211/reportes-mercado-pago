@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MPTransaction;
+use App\Models\MpTransaction;
 use Illuminate\Http\Request;
 
 class MpTransactionController extends Controller
@@ -34,7 +34,7 @@ class MpTransactionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(MPTransaction $mPTransaction)
+    public function show(MpTransaction $mPTransaction)
     {
         //
     }
@@ -42,7 +42,7 @@ class MpTransactionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(MPTransaction $mPTransaction)
+    public function edit(MpTransaction $mPTransaction)
     {
         //
     }
@@ -50,7 +50,7 @@ class MpTransactionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MPTransaction $mPTransaction)
+    public function update(Request $request, MpTransaction $mPTransaction)
     {
         //
     }
@@ -58,7 +58,7 @@ class MpTransactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(MPTransaction $mPTransaction)
+    public function destroy(MpTransaction $mPTransaction)
     {
         //
     }
