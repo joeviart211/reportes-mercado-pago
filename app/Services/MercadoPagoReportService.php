@@ -98,26 +98,26 @@ class MercadoPagoReportService
             \App\Models\MpTransaction::updateOrCreate(
                 [
                     'branch_id'      => $branch->id,
-                    'operation_id'   => $data['ID DE OPERACIÓN EN MERCADO PAGO'],
-                    'operation_type' => $data['TIPO DE OPERACIÓN'],
+                    'operation_id'   => $data['SOURCE_ID'],
+                    'operation_type' => $data['TRANSACTION_TYPE'],
                 ],
                 [
-                    'payment_method'   => $data['TIPO DE MEDIO DE PAGO'] ?: null,
-                    'purchase_amount'  => (float) ($data['VALOR DE LA COMPRA'] ?? 0),
-                    'commission'       => (float) ($data['COMISIONES + IVA'] ?? 0),
-                    'net_amount'       => (float) ($data['MONTO NETO DE LA OPERACIÓN'] ?? 0),
-                    'tax_retention'    => (float) ($data['IMPUESTOS COBRADOS POR RETENCIONES DE IIBB'] ?? 0),
-                    'order_id'         => $data['ID DE LA ORDEN'] ?: null,
-                    'shipment_id'      => $data['ID DEL ENVÍO'] ?: null,
-                    'package_id'       => $data['ID DEL PAQUETE'] ?: null,
-                    'sales_channel'    => $data['CANAL DE VENTA'] ?: null,
-                    'payment_platform' => $data['PLATAFORMA DE COBRO'] ?: null,
-                    'origin_at'        => !empty($data['FECHA DE ORIGEN'])
-                                            ? \Carbon\Carbon::parse($data['FECHA DE ORIGEN']) : null,
-                    'approved_at'      => !empty($data['FECHA DE APROBACIÓN'])
-                                            ? \Carbon\Carbon::parse($data['FECHA DE APROBACIÓN']) : null,
-                    'released_at'      => !empty($data['FECHA DE LIBERACIÓN DEL DINERO'])
-                                            ? \Carbon\Carbon::parse($data['FECHA DE LIBERACIÓN DEL DINERO']) : null,
+                    'payment_method'   => $data['PAYMENT_METHOD_TYPE'] ?: null,
+                    'purchase_amount'  => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
+                    'commission'       => (float) ($data['FEE_AMOUNT'] ?? 0),
+                    'net_amount'       => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
+                    'tax_retention'    => (float) ($data['TAXES_AMOUNT'] ?? 0),
+                    'order_id'         => $data['ORDER_ID'] ?: null,
+                    'shipment_id'      => $data['SHIPPING_ID'] ?: null,
+                    'package_id'       => $data['PACK_ID'] ?: null,
+                    'sales_channel'    => $data['STORE_NAME'] ?: null,
+                    'payment_platform' => $data['POI_WALLET_NAME'] ?: ($data['PAYMENT_METHOD'] ?: null),
+                    'origin_at'        => !empty($data['TRANSACTION_DATE'])
+                                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                    'approved_at'      => !empty($data['TRANSACTION_DATE'])
+                                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                    'released_at'      => !empty($data['SETTLEMENT_DATE'])
+                                            ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
                 ]
             );
 
