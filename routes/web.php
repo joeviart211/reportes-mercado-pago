@@ -39,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
              Route::post('/request',              [MpReportController::class, 'request'])->name('request');
              Route::post('/{fileName}/import',    [MpReportController::class, 'import'])->name('import');
          });
+
+     Route::get('/mp/export/{branch}', [MpReportController::class, 'exportCsv'])->name('exportCsv');
 });
 
 // ── Callback ML — fuera de auth porque ML redirige sin sesión activa ──

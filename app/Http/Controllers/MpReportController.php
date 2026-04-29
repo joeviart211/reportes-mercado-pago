@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Services\MercadoPagoReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\MpTransaction;
 
 class MpReportController extends Controller
 {
@@ -48,5 +49,47 @@ class MpReportController extends Controller
         $count = $this->reportService->importCsv($branch, $csv);
 
         return back()->with('success', "{$count} transacciones importadas para {$branch->name}.");
+    }
+    public function exportCsv(Branch $branch)
+    {
+        $rows = MpTransaction::where('branch_id', $branch->id)->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=mp-report-'.$branch->id.'.csv',
+        ];
+
+        $callback = function () use ($rows) {
+            $file = fopen('php://output', 'w');
+
+            // Encabezados
+            fputcsv($file, [
+                'operation_id',
+                'type',
+                'amount',
+                'commission',
+                'net',
+                'order_id',
+                'shipment_id',
+                'date'
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($file, [
+                    $row->operation_id,
+                    $row->operation_type,
+                    $row->purchase_amount,
+                    $row->commission,
+                    $row->net_amount,
+                    $row->order_id,
+                    $row->shipment_id,
+                    optional($row->origin_at)->toDateTimeString(),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

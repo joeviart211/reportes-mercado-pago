@@ -147,6 +147,9 @@
                                                 Importar a BD
                                             </button>
                                         </form>
+                                        <a href="{{ url('/mp/export/'.$branch->id) }}" class="btn btn-primary">
+                                            Exportar CSV (BD)
+                                        </a>
                                     @else
                                         <span class="text-gray-300 text-xs">No disponible</span>
                                     @endif

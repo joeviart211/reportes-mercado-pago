@@ -76,54 +76,54 @@ class MercadoPagoReportService
     }
     // ─── Procesar e importar CSV a la BD ──────────────────────────
     public function importCsv(Branch $branch, string $csvContent): int
-    {
-        $rows    = array_filter(explode("\n", trim($csvContent)));
-        $headers = null;
-        $count   = 0;
+        {
+            $rows    = array_filter(explode("\n", trim($csvContent)));
+            $headers = null;
+            $count   = 0;
 
-        foreach ($rows as $row) {
-            $columns = str_getcsv($row);
+            foreach ($rows as $row) {
+                $columns = str_getcsv($row);
 
-            if (!$headers) {
-                $headers = array_map('trim', $columns);
-                continue;
+                if (!$headers) {
+                    $headers = array_map('trim', $columns);
+                    continue;
+                }
+
+                if (count($columns) !== count($headers)) {
+                    continue;
+                }
+
+                $data = array_combine($headers, $columns);
+
+                \App\Models\MpTransaction::updateOrCreate(
+                    [
+                        'branch_id'      => $branch->id,
+                        'operation_id'   => $data['SOURCE_ID'],
+                        'operation_type' => $data['TRANSACTION_TYPE'],
+                    ],
+                    [
+                        'payment_method'   => $data['PAYMENT_METHOD_TYPE'] ?: null,
+                        'purchase_amount'  => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
+                        'commission'       => (float) ($data['FEE_AMOUNT'] ?? 0),
+                        'net_amount'       => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
+                        'tax_retention'    => (float) ($data['TAXES_AMOUNT'] ?? 0),
+                        'order_id'         => $data['ORDER_ID'] ?: null,
+                        'shipment_id'      => $data['SHIPPING_ID'] ?: null,
+                        'package_id'       => $data['PACK_ID'] ?: null,
+                        'sales_channel'    => $data['STORE_NAME'] ?: null,
+                        'payment_platform' => $data['POI_WALLET_NAME'] ?: ($data['PAYMENT_METHOD'] ?: null),
+                        'origin_at'        => !empty($data['TRANSACTION_DATE'])
+                                                ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                        'approved_at'      => !empty($data['TRANSACTION_DATE'])
+                                                ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                        'released_at'      => !empty($data['SETTLEMENT_DATE'])
+                                                ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
+                    ]
+                );
+
+                $count++;
             }
 
-            if (count($columns) !== count($headers)) {
-                continue;
-            }
-
-            $data = array_combine($headers, $columns);
-
-            \App\Models\MpTransaction::updateOrCreate(
-                [
-                    'branch_id'      => $branch->id,
-                    'operation_id'   => $data['SOURCE_ID'],
-                    'operation_type' => $data['TRANSACTION_TYPE'],
-                ],
-                [
-                    'payment_method'   => $data['PAYMENT_METHOD_TYPE'] ?: null,
-                    'purchase_amount'  => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
-                    'commission'       => (float) ($data['FEE_AMOUNT'] ?? 0),
-                    'net_amount'       => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
-                    'tax_retention'    => (float) ($data['TAXES_AMOUNT'] ?? 0),
-                    'order_id'         => $data['ORDER_ID'] ?: null,
-                    'shipment_id'      => $data['SHIPPING_ID'] ?: null,
-                    'package_id'       => $data['PACK_ID'] ?: null,
-                    'sales_channel'    => $data['STORE_NAME'] ?: null,
-                    'payment_platform' => $data['POI_WALLET_NAME'] ?: ($data['PAYMENT_METHOD'] ?: null),
-                    'origin_at'        => !empty($data['TRANSACTION_DATE'])
-                                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
-                    'approved_at'      => !empty($data['TRANSACTION_DATE'])
-                                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
-                    'released_at'      => !empty($data['SETTLEMENT_DATE'])
-                                            ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
-                ]
-            );
-
-            $count++;
+            return $count;
         }
-
-        return $count;
-    }
 }
