@@ -147,7 +147,7 @@
                                                 Importar a BD
                                             </button>
                                         </form>
-                                        <a href="{{ url('/mp/export/'.$branch->id) }}" class="btn btn-primary">
+                                        <a href="{{ route('exportCsv', $branch) }}" class="btn btn-primary">
                                             Exportar CSV (BD)
                                         </a>
                                     @else
