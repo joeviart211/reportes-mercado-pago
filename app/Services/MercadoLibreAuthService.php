@@ -17,7 +17,7 @@ class MercadoLibreAuthService
             'response_type' => 'code',
             'client_id'     => $branch->ml_client_id,       // ← de la BD
             'redirect_uri'  => route('ml.callback'),
-            'state'         => 'branch_' . $branch->id,
+            'state' => $branch->slug
         ]);
     }
 
