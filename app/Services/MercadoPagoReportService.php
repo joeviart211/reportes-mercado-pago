@@ -7,6 +7,8 @@ use App\Models\Branch;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use App\Services\MercadoLibreAuthService;
+use Illuminate\Support\Facades\Log;
+
 class MercadoPagoReportService
 {
     const MP_BASE = 'https://api.mercadopago.com';
@@ -22,6 +24,8 @@ class MercadoPagoReportService
     public function requestReport(Branch $branch, Carbon $from, Carbon $to): array
     {
         $token = $this->authService->getValidToken($branch);
+
+        $this->logCurrentUser($token, 'REQUEST REPORT');
 
         $response = Http::withToken($token)
             ->post(self::MP_BASE . '/v1/account/settlement_report', [
@@ -41,6 +45,8 @@ class MercadoPagoReportService
     {
         $token = $this->authService->getValidToken($branch);
 
+        $this->logCurrentUser($token, 'LIST REPORTS');
+
         $response = Http::withToken($token)
             ->get(self::MP_BASE . '/v1/account/settlement_report/search', $filters);
 
@@ -55,6 +61,8 @@ class MercadoPagoReportService
     {
         $token = $this->authService->getValidToken($branch);
 
+        $this->logCurrentUser($token, 'DOWNLOAD REPORT');
+
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/settlement_report/{$fileName}");
 
@@ -68,7 +76,7 @@ class MercadoPagoReportService
     public function downloadReleaseReport(Branch $branch, string $fileName): string
     {
         $token = $this->authService->getValidToken($branch);
-
+        $this->logCurrentUser($token, 'DOWNLOAD RELEASE REPORT');
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/release_report/{$fileName}");
 
@@ -126,4 +134,31 @@ class MercadoPagoReportService
 
             return $count;
         }
+    private function logCurrentUser(string $token, string $context = 'MP DEBUG'): void
+    {
+        try {
+            $response = Http::withToken($token)
+                ->get(self::MP_BASE . '/users/me');
+
+            if ($response->ok()) {
+                $data = $response->json();
+
+                Log::info($context, [
+                    'user_id' => $data['id'] ?? null,
+                    'nickname' => $data['nickname'] ?? null,
+                    'email' => $data['email'] ?? null,
+                    'site_id' => $data['site_id'] ?? null,
+                ]);
+            } else {
+                Log::warning($context . ' - failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error($context . ' - exception', [
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

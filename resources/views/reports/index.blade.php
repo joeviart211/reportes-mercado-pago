@@ -161,7 +161,7 @@
             @endif
         </div>
 
-        @endif {{-- isConnectedToMl --}}
+        @endif 
 
     </div>
 </x-app-layout>
