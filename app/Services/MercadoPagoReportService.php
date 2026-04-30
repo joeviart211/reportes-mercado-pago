@@ -45,7 +45,7 @@ class MercadoPagoReportService
     {
         $token = $this->authService->getValidToken($branch);
 
-        $this->logCurrentUser($token, 'LIST REPORTS');
+        $this->logCurrentUser($token, 'LIST REPORTS', $branch->ml_client_id);
 
         $response = Http::withToken($token)
             ->get(self::MP_BASE . '/v1/account/settlement_report/search', $filters);
@@ -61,7 +61,7 @@ class MercadoPagoReportService
     {
         $token = $this->authService->getValidToken($branch);
 
-        $this->logCurrentUser($token, 'DOWNLOAD REPORT');
+        $this->logCurrentUser($token, 'DOWNLOAD REPORT', $branch->ml_client_id);
 
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/settlement_report/{$fileName}");
@@ -76,7 +76,7 @@ class MercadoPagoReportService
     public function downloadReleaseReport(Branch $branch, string $fileName): string
     {
         $token = $this->authService->getValidToken($branch);
-        $this->logCurrentUser($token, 'DOWNLOAD RELEASE REPORT');
+        $this->logCurrentUser($token, 'DOWNLOAD RELEASE REPORT', $branch->ml_client_id);
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/release_report/{$fileName}");
 
@@ -134,7 +134,7 @@ class MercadoPagoReportService
 
             return $count;
         }
-    private function logCurrentUser(string $token, string $context = 'MP DEBUG'): void
+    private function logCurrentUser(string $token, string $context = 'MP DEBUG', $client_id): void
     {
         try {
             $response = Http::withToken($token)
@@ -144,6 +144,7 @@ class MercadoPagoReportService
                 $data = $response->json();
 
                 Log::info($context, [
+                    'client_id' => $client_id,
                     'user_id' => $data['id'] ?? null,
                     'nickname' => $data['nickname'] ?? null,
                     'email' => $data['email'] ?? null,
