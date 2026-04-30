@@ -56,7 +56,7 @@ class MercadoLibreAuthService
     public function storeTokens(Branch $branch, array $tokens): void
     {
         $branch->update([
-            'ml_access_token'     => $tokens['access_token'],   // cast 'encrypted' lo cifra solo
+            'ml_access_token'     => $tokens['access_token'],   
             'ml_refresh_token'    => $tokens['refresh_token'],
             'ml_token_expires_at' => now()->addSeconds($tokens['expires_in']),
             'ml_user_id'          => $tokens['user_id'],
