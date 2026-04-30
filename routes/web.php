@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\MlAuthController;
 use App\Http\Controllers\MpReportController;
+use App\Http\Controllers\UserController;
 
 Route::view('/', 'welcome');
 
@@ -41,6 +42,8 @@ Route::middleware(['auth'])->group(function () {
          });
 
      Route::get('/mp/export/{branch}', [MpReportController::class, 'exportCsv'])->name('exportCsv');
+
+     Route::resource('users', UserController::class);
 });
 
 // ── Callback ML — fuera de auth porque ML redirige sin sesión activa ──
