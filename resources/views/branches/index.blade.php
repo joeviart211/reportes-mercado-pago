@@ -32,6 +32,9 @@
                         <td>
                             <a href="{{ route('branches.show', $branch) }}">Ver</a> |
                             <a href="{{ route('branches.edit', $branch) }}">Editar</a>
+                            <a href="{{ route('branches.reports.index', $branch) }}">
+                                Ver reportes
+                            </a>
                         </td>
                     </tr>
                 @endforeach

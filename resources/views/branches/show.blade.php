@@ -15,9 +15,7 @@
 
         <hr class="my-4">
 
-        <a href="{{ route('branches.reports.index', $branch) }}">
-            Ver reportes
-        </a>
+        
 
         {{-- 🔗 Conectar Mercado Libre --}}
         <a href="{{ route('branches.ml.connect', $branch) }}"
