@@ -32,7 +32,7 @@
                 </div>
             @endif
 
-            {{-- Validation errors --}}
+            {{-- Errores de validación --}}
             @if ($errors->any())
                 <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-950">
                     <p class="mb-1.5 text-sm font-semibold text-red-800 dark:text-red-400">
@@ -144,27 +144,45 @@
                     @method('PUT')
 
                     <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Roles</h3>
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Rol</h3>
                         <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                            El usuario heredará todos los permisos de los roles seleccionados
+                            El usuario heredará todos los permisos del rol seleccionado
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-3">
-                        @foreach($roles as $role)
-                            <label class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5 transition hover:border-indigo-300 hover:bg-indigo-50/50 dark:border-gray-600 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/20 has-[:checked]:border-indigo-400 has-[:checked]:bg-indigo-50 dark:has-[:checked]:border-indigo-500 dark:has-[:checked]:bg-indigo-900/30">
-                                <input type="checkbox" name="roles[]" value="{{ $role->name }}"
-                                       {{ in_array($role->name, $userRoles) ? 'checked' : '' }}
-                                       class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $role->name }}</span>
-                            </label>
-                        @endforeach
+                    <div class="px-6 py-5">
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            @foreach($roles as $role)
+                                <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition
+                                    hover:border-indigo-300 hover:bg-indigo-50/40
+                                    dark:border-gray-600 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/20
+                                    has-[:checked]:border-indigo-400 has-[:checked]:bg-indigo-50
+                                    dark:has-[:checked]:border-indigo-500 dark:has-[:checked]:bg-indigo-900/30">
+                                    <input type="checkbox"
+                                           name="roles[]"
+                                           value="{{ $role->name }}"
+                                           {{ in_array($role->name, $userRoles) ? 'checked' : '' }}
+                                           class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                    <div>
+                                        <span class="block text-sm font-semibold capitalize text-gray-800 dark:text-gray-200">
+                                            {{ $role->name }}
+                                        </span>
+                                        <span class="mt-0.5 block text-xs text-gray-400 dark:text-gray-500">
+                                            {{ $role->permissions->pluck('name')->map(fn($p) => explode('.', $p)[1] ?? $p)->implode(', ') ?: 'Sin permisos' }}
+                                        </span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
                     </div>
 
                     <div class="flex justify-end px-6 py-4">
                         <button type="submit"
                                 class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                            Actualizar roles
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Actualizar rol
                         </button>
                     </div>
 
@@ -180,20 +198,29 @@
                     <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Permisos directos</h3>
                         <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                            Permisos adicionales independientes de los roles asignados
+                            Permisos adicionales independientes del rol asignado
                         </p>
                     </div>
 
                     <div class="divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach($permissions as $group => $groupPermissions)
                             <div class="px-6 py-4">
-                                <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                                    {{ $group }}
-                                </p>
-                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                        {{ $group }}
+                                    </p>
+                                    <button type="button"
+                                            onclick="toggleGroup('perm-{{ $loop->index }}')"
+                                            class="text-xs text-blue-600 hover:underline dark:text-blue-400">
+                                        Todos
+                                    </button>
+                                </div>
+                                <div id="perm-{{ $loop->index }}" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                     @foreach($groupPermissions as $permission)
                                         <label class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <input type="checkbox" name="permissions[]" value="{{ $permission->name }}"
+                                            <input type="checkbox"
+                                                   name="permissions[]"
+                                                   value="{{ $permission->name }}"
                                                    {{ in_array($permission->name, $userPermissions) ? 'checked' : '' }}
                                                    class="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400 dark:border-gray-600 dark:bg-gray-700">
                                             <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -209,6 +236,9 @@
                     <div class="flex justify-end px-6 py-4">
                         <button type="submit"
                                 class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
                             Actualizar permisos
                         </button>
                     </div>
@@ -260,6 +290,12 @@
             input.type = isPass ? 'text' : 'password';
             eyeOn.classList.toggle('hidden', isPass);
             eyeOff.classList.toggle('hidden', !isPass);
+        }
+
+        function toggleGroup(id) {
+            const boxes      = document.getElementById(id).querySelectorAll('input[type="checkbox"]');
+            const allChecked = [...boxes].every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
         }
     </script>
 

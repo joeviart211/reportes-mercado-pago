@@ -73,9 +73,8 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles       = Role::orderBy('name')->get();
-        $permissions = Permission::orderBy('name')->get()->groupBy(fn($p) => explode('.', $p->name)[0]);
-
+        $roles           = Role::with('permissions')->orderBy('name')->get(); // ← with('permissions')
+        $permissions     = Permission::orderBy('name')->get()->groupBy(fn($p) => explode('.', $p->name)[0]);
         $userRoles       = $user->roles->pluck('name')->toArray();
         $userPermissions = $user->getDirectPermissions()->pluck('name')->toArray();
 

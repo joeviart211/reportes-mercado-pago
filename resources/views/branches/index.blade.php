@@ -9,14 +9,16 @@
                     Gestión y seguimiento de todas las sucursales
                 </p>
             </div>
+            @role('admin')
+                <a href="{{ route('branches.create') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Nueva sucursal
+                </a>
+            @endrole
 
-            <a href="{{ route('branches.create') }}"
-               class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                Nueva sucursal
-            </a>
         </div>
     </x-slot>
 
@@ -83,18 +85,23 @@
                             </td>
                             <td class="whitespace-nowrap px-5 py-4">
                                 <div class="flex items-center justify-end gap-2">
+                                   
                                     <a href="{{ route('branches.show', $branch) }}"
                                        class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-300 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:ring-gray-600 dark:hover:bg-gray-700 dark:hover:text-white">
                                         Ver
                                     </a>
-                                    <a href="{{ route('branches.edit', $branch) }}"
-                                       class="rounded-md px-3 py-1.5 text-xs font-medium text-blue-600 ring-1 ring-blue-300 transition hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:ring-blue-700 dark:hover:bg-blue-950 dark:hover:text-blue-300">
-                                        Editar
-                                    </a>
-                                    <a href="{{ route('branches.reports.index', $branch) }}"
-                                       class="rounded-md px-3 py-1.5 text-xs font-medium text-indigo-600 ring-1 ring-indigo-300 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:ring-indigo-700 dark:hover:bg-indigo-950 dark:hover:text-indigo-300">
-                                        Reportes
-                                    </a>
+                                    @role('admin')
+                                        <a href="{{ route('branches.edit', $branch) }}"
+                                        class="rounded-md px-3 py-1.5 text-xs font-medium text-blue-600 ring-1 ring-blue-300 transition hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:ring-blue-700 dark:hover:bg-blue-950 dark:hover:text-blue-300">
+                                            Editar
+                                        </a>
+                                    @endrole
+                                    @role('admin')
+                                        <a href="{{ route('branches.reports.index', $branch) }}"
+                                        class="rounded-md px-3 py-1.5 text-xs font-medium text-indigo-600 ring-1 ring-indigo-300 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:ring-indigo-700 dark:hover:bg-indigo-950 dark:hover:text-indigo-300">
+                                            Reportes
+                                        </a>
+                                    @endrole                                    
                                 </div>
                             </td>
                         </tr>

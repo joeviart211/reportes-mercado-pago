@@ -55,8 +55,8 @@ new class extends Component
                         <x-dropdown-link :href="route('profile')" wire:navigate>
                             {{ __('Profile') }}
                         </x-dropdown-link>
-                        <x-dropdown-link :href="route('profile')" wire:navigate>
-                            {{ __('Profile') }}
+                        <x-dropdown-link :href="route('users.index')" wire:navigate>
+                            {{ __('Usuarios') }}
                         </x-dropdown-link>
                     
                         <!-- Authentication -->
