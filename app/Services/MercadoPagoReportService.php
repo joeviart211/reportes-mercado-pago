@@ -25,7 +25,6 @@ class MercadoPagoReportService
     {
         $token = $this->authService->getValidToken($branch);
 
-        $this->logCurrentUser($token, 'REQUEST REPORT');
 
         $response = Http::withToken($token)
             ->post(self::MP_BASE . '/v1/account/settlement_report', [
