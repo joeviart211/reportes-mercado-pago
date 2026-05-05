@@ -65,6 +65,9 @@ class MercadoPagoReportService
 
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/settlement_report/{$fileName}");
+        Log::info('Settlement response body', [
+            'body' => $response->body()
+        ]);
 
         return $response->throw()->body(); // CSV en texto plano
     }
