@@ -179,6 +179,7 @@ class MercadoPagoReportService
 
                         'released_at' => !empty($data['SETTLEMENT_DATE'])
                             ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
+                        'file_name'   => $fileName
                     ]
                 );
 
