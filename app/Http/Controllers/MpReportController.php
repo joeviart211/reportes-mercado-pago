@@ -62,28 +62,87 @@ class MpReportController extends Controller
         $callback = function () use ($rows) {
             $file = fopen('php://output', 'w');
 
-            // Encabezados
+            // ─── Encabezados ───────────────────────────
             fputcsv($file, [
                 'operation_id',
-                'type',
-                'amount',
+                'operation_type',
+                'external_reference',
+
+                'payment_method',
+                'payment_method_type',
+                'installments',
+
+                'purchase_amount',
+                'seller_amount',
+                'real_amount',
+                'coupon_amount',
+
                 'commission',
-                'net',
+                'mkp_fee',
+                'financing_fee',
+                'shipping_fee',
+
+                'net_amount',
+                'tax_retention',
+
+                'transaction_currency',
+                'settlement_currency',
+
                 'order_id',
                 'shipment_id',
-                'date'
+                'package_id',
+
+                'sales_channel',
+                'store_id',
+                'pos_id',
+                'pos_name',
+
+                'shipment_mode',
+
+                'origin_at',
+                'released_at'
             ]);
 
+            // ─── Filas ────────────────────────────────
             foreach ($rows as $row) {
                 fputcsv($file, [
                     $row->operation_id,
                     $row->operation_type,
+                    $row->external_reference,
+
+                    $row->payment_method,
+                    $row->payment_method_type,
+                    $row->installments,
+
                     $row->purchase_amount,
+                    $row->seller_amount,
+                    $row->real_amount,
+                    $row->coupon_amount,
+
                     $row->commission,
+                    $row->mkp_fee,
+                    $row->financing_fee,
+                    $row->shipping_fee,
+
                     $row->net_amount,
+                    $row->tax_retention,
+
+                    $row->transaction_currency,
+                    $row->settlement_currency,
+
                     $row->order_id,
                     $row->shipment_id,
+                    $row->package_id,
+
+                    $row->sales_channel,
+                    $row->store_id,
+                    $row->pos_id,
+                    $row->pos_name,
+
+                    $row->shipment_mode,
+
                     optional($row->origin_at)->toDateTimeString(),
+                    optional($row->released_at)->toDateTimeString(),
                 ]);
             }
 
