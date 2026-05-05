@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mp_transactions', function (Blueprint $table) {
-            $table->string('file_name')->nullable()->index();
+            $table->string('file_name')->nullable();
         });
     }
 
