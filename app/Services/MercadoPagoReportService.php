@@ -85,7 +85,7 @@ class MercadoPagoReportService
         return $response->throw()->body();
     }
     // ─── Procesar e importar CSV a la BD ──────────────────────────
-    public function importCsv(Branch $branch, string $csvContent): int
+    public function importCsv(Branch $branch, string $csvContent, string $fileName): int
         {
             $rows    = array_filter(explode("\n", trim($csvContent)));
             $headers = null;

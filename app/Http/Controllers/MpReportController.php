@@ -46,14 +46,14 @@ class MpReportController extends Controller
         abort_unless($branch->isConnectedToMl(), 403);
 
         $csv   = $this->reportService->downloadReport($branch, $fileName);
-        $count = $this->reportService->importCsv($branch, $csv);
+        $count = $this->reportService->importCsv($branch, $csv, $fileName);
 
         return back()->with('success', "{$count} transacciones importadas para {$branch->name}.");
     }
-    public function exportCsv(Branch $branch)
+    public function exportCsv(Branch $branch, string $fileName)
     {
-        $rows = MpTransaction::where('branch_id', $branch->id)->get();
-
+        
+        $rows = MpTransaction::where('branch_id', $branch->id)->where('file_name', $fileName)->get();
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename=mp-report-'.$branch->id.'.csv',

@@ -42,7 +42,7 @@ Route::middleware(['auth'])->group(function () {
              Route::post('/{fileName}/import',    [MpReportController::class, 'import'])->name('import');
          });
 
-     Route::get('/mp/export/{branch}', [MpReportController::class, 'exportCsv'])->name('exportCsv');
+     Route::get('/mp/export/{branch}/{fileName}', [MpReportController::class, 'exportCsv'])->name('exportCsv');
 
      Route::resource('users', UserController::class);
 });

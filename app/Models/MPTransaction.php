@@ -67,6 +67,7 @@ class MpTransaction extends Model
         'origin_at',
         'approved_at',
         'released_at',
+        'file_name'
     ];
 
     protected $casts = [
