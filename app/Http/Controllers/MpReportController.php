@@ -7,6 +7,11 @@ use App\Services\MercadoPagoReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\MpTransaction;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class MpReportController extends Controller
 {
@@ -66,43 +71,44 @@ class MpReportController extends Controller
 
             // ─── Encabezados ───────────────────────────
             fputcsv($file, [
-                'operation_id',
-                'operation_type',
-                'external_reference',
+                'ID DE OPERACIÓN EN MERCADO PAGO',
+                'TIPO DE OPERACIÓN
+',
+                'Referencia externa',
 
-                'payment_method',
-                'payment_method_type',
-                'installments',
+                ' MEDIO DE PAGO',
+                'TIPO DE MEDIO DE PAGO',
+                'CUOTAS',
 
-                'purchase_amount',
-                'seller_amount',
-                'real_amount',
-                'coupon_amount',
+                'Monto de compra',
+                'Monto del vendedor',
+                'Monto real',
+                'Monto de cupón',
 
-                'commission',
-                'mkp_fee',
-                'financing_fee',
-                'shipping_fee',
+                'Comisión +IVA',
+                'Tarifa de marketplace',
+                'Tarifa de financiamiento',
+                'Tarifa de envío',
 
-                'net_amount',
-                'tax_retention',
+                'Monto neto',
+                'Retención de impuestos',
 
-                'transaction_currency',
-                'settlement_currency',
+                'Moneda de transacción',
+                'Moneda de liquidación',
 
-                'order_id',
-                'shipment_id',
-                'package_id',
+                'ID de orden',
+                'ID de envío',
+                'ID de paquete',
 
-                'sales_channel',
-                'store_id',
-                'pos_id',
-                'pos_name',
+                'Canal de ventas',
+                'ID de tienda',
+                'ID de POS',
+                'Nombre de POS',
 
-                'shipment_mode',
+                'Modalidad de envío',
 
-                'origin_at',
-                'released_at'
+                'Fecha de origen',
+                'Fecha de liberación'
             ]);
 
             // ─── Filas ────────────────────────────────
@@ -152,5 +158,129 @@ class MpReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+    public function exportXls(Branch $branch, string $fileName)
+    {
+        $rows = MpTransaction::where('branch_id', $branch->id)
+            ->where('file_name', $fileName)
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // ─── Encabezados ───────────────────────────
+        $headers = [
+            'ID DE OPERACIÓN EN MERCADO PAGO',
+            'TIPO DE OPERACIÓN',
+            'Referencia externa',
+            'MEDIO DE PAGO',
+            'TIPO DE MEDIO DE PAGO',
+            'CUOTAS',
+            'Monto de compra',
+            'Monto del vendedor',
+            'Monto real',
+            'Monto de cupón',
+            'Comisión + IVA',
+            'Tarifa de marketplace',
+            'Tarifa de financiamiento',
+            'Tarifa de envío',
+            'Monto neto',
+            'Retención de impuestos',
+            'Moneda de transacción',
+            'Moneda de liquidación',
+            'ID de orden',
+            'ID de envío',
+            'ID de paquete',
+            'Canal de ventas',
+            'ID de tienda',
+            'ID de POS',
+            'Nombre de POS',
+            'Modalidad de envío',
+            'Fecha de origen',
+            'Fecha de liberación',
+        ];
+
+        // Columnas que deben ser texto (IDs grandes)
+        $textColumns = ['A', 'C', 'S', 'T', 'U', 'Y']; // operation_id, external_ref, order_id, shipment_id, package_id, pos_id
+
+        $sheet->fromArray($headers, null, 'A1');
+
+        // ─── Filas ────────────────────────────────
+        foreach ($rows as $i => $row) {
+            $rowNum = $i + 2;
+            $data = [
+                $row->operation_id,
+                $row->operation_type,
+                $row->external_reference,
+                $row->payment_method,
+                $row->payment_method_type,
+                $row->installments,
+                $row->purchase_amount,
+                $row->seller_amount,
+                $row->real_amount,
+                $row->coupon_amount,
+                $row->commission,
+                $row->mkp_fee,
+                $row->financing_fee,
+                $row->shipping_fee,
+                $row->net_amount,
+                $row->tax_retention,
+                $row->transaction_currency,
+                $row->settlement_currency,
+                $row->order_id,
+                $row->shipment_id,
+                $row->package_id,
+                $row->sales_channel,
+                $row->store_id,
+                $row->pos_id,
+                $row->pos_name,
+                $row->shipment_mode,
+                optional($row->origin_at)->toDateTimeString(),
+                optional($row->released_at)->toDateTimeString(),
+            ];
+
+            foreach ($data as $colIndex => $value) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+                $cell = $sheet->getCell("{$colLetter}{$rowNum}");
+
+                // Forzar texto en columnas con IDs grandes
+                if (in_array($colLetter, $textColumns)) {
+                    $cell->setValueExplicit(
+                        (string) $value,
+                        \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
+                    );
+                } else {
+                    $cell->setValue($value);
+                }
+            }
+        }
+
+        // ─── Estilo encabezados ───────────────────
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4A90D9'],
+            ],
+            'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
+        ]);
+
+        // Auto-ancho columnas
+        foreach (range('A', $lastCol) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // ─── Respuesta ────────────────────────────
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'mp_report_');
+        $writer->save($tempFile);
+
+        return response()->download(
+            $tempFile,
+            'mp-report-' . $branch->id . '.xlsx',
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+        )->deleteFileAfterSend(true);
     }
 }

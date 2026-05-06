@@ -147,8 +147,8 @@
                                                 Importar a BD
                                             </button>
                                         </form>
-                                        <a href="{{ route('exportCsv', [$branch, $report['file_name']]) }}" class="btn btn-primary">
-                                            Exportar CSV (BD)
+                                        <a href="{{ route('exportXls', [$branch, $report['file_name']]) }}" class="btn btn-primary">
+                                            Exportar XLS (BD)
                                         </a>
                                     @else
                                         <span class="text-gray-300 text-xs">No disponible</span>

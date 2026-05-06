@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
          });
 
      Route::get('/mp/export/{branch}/{fileName}', [MpReportController::class, 'exportCsv'])->name('exportCsv');
+     Route::get('/mp/export/{branch}/{fileName}', [MpReportController::class, 'exportXls'])->name('exportXls');
 
      Route::resource('users', UserController::class);
 });
