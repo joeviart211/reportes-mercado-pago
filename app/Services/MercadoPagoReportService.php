@@ -104,7 +104,7 @@ class MercadoPagoReportService
                 }
 
                 $data = array_combine($headers, $columns);
-                 dd($fileName);
+                 logger()->info('IMPORT CSV RUNNING', ['file' => $fileName]);
                 \App\Models\MpTransaction::create(
                     [
                         'branch_id'      => $branch->id,
