@@ -88,7 +88,7 @@ class MercadoPagoReportService
     // ─── Procesar e importar CSV a la BD ──────────────────────────
     public function importCsv(Branch $branch, string $csvContent, string $fileName): int
         {
-           $stream = fopen('php://temp', 'r+');
+            $stream = fopen('php://temp', 'r+');
             fwrite($stream, $csvContent);
             rewind($stream);
 
@@ -112,6 +112,16 @@ class MercadoPagoReportService
                 $data = array_combine($headers, $columns);
 
                 DB::enableQueryLog();
+                $modelInstance = new \App\Models\MpTransaction([
+                    'branch_id'  => $branch->id,
+                    'file_name'  => $fileName,
+                    'operation_id' => $data['SOURCE_ID'],
+                ]);
+
+                logger()->info('ATTRIBUTES BEFORE SAVE', $modelInstance->getAttributes());
+                logger()->info('FILLABLE', $modelInstance->getFillable());
+
+                $modelInstance->save();
 
                 \App\Models\MpTransaction::create(
                     [
