@@ -89,6 +89,7 @@ class MercadoPagoReportService
     public function importCsv(Branch $branch, string $csvContent, string $fileName): int
         {
             $stream = fopen('php://temp', 'r+');
+            dd($csvContent);
             fwrite($stream, $csvContent);
             rewind($stream);
 
