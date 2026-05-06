@@ -105,83 +105,89 @@ class MercadoPagoReportService
 
                 $data = array_combine($headers, $columns);
                  logger()->info('IMPORT CSV RUNNING', ['file' => $fileName]);
-                \App\Models\MpTransaction::create(
-                    [
-                        'branch_id'      => $branch->id,
-                        'operation_id'   => $data['SOURCE_ID'],
-                        'operation_type' => $data['TRANSACTION_TYPE'],
-                        'file_name'   => $fileName,
-                        // ─── Identificación ────────────────────────
-                        'external_reference' => $data['EXTERNAL_REFERENCE'] ?: null,
+                // \App\Models\MpTransaction::create(
+                //     [
+                //         'branch_id'      => $branch->id,
+                //         'operation_id'   => $data['SOURCE_ID'],
+                //         'operation_type' => $data['TRANSACTION_TYPE'],
+                //         'file_name'   => $fileName,
+                //         // ─── Identificación ────────────────────────
+                //         'external_reference' => $data['EXTERNAL_REFERENCE'] ?: null,
 
-                        // ─── Pago ──────────────────────────────────
-                        'payment_method'      => $data['PAYMENT_METHOD'] ?: null,
-                        'payment_method_type' => $data['PAYMENT_METHOD_TYPE'] ?: null,
-                        'installments'        => (int) ($data['INSTALLMENTS'] ?? 0),
+                //         // ─── Pago ──────────────────────────────────
+                //         'payment_method'      => $data['PAYMENT_METHOD'] ?: null,
+                //         'payment_method_type' => $data['PAYMENT_METHOD_TYPE'] ?: null,
+                //         'installments'        => (int) ($data['INSTALLMENTS'] ?? 0),
 
-                        // ─── Montos ────────────────────────────────
-                        'purchase_amount' => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
-                        'seller_amount'   => (float) ($data['SELLER_AMOUNT'] ?? 0),
-                        'real_amount'     => (float) ($data['REAL_AMOUNT'] ?? 0),
-                        'coupon_amount'   => (float) ($data['COUPON_AMOUNT'] ?? 0),
+                //         // ─── Montos ────────────────────────────────
+                //         'purchase_amount' => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
+                //         'seller_amount'   => (float) ($data['SELLER_AMOUNT'] ?? 0),
+                //         'real_amount'     => (float) ($data['REAL_AMOUNT'] ?? 0),
+                //         'coupon_amount'   => (float) ($data['COUPON_AMOUNT'] ?? 0),
 
-                        // ─── Comisiones ────────────────────────────
-                        'commission'     => (float) ($data['FEE_AMOUNT'] ?? 0),
-                        'mkp_fee'        => (float) ($data['MKP_FEE_AMOUNT'] ?? 0),
-                        'financing_fee'  => (float) ($data['FINANCING_FEE_AMOUNT'] ?? 0),
-                        'shipping_fee'   => (float) ($data['SHIPPING_FEE_AMOUNT'] ?? 0),
+                //         // ─── Comisiones ────────────────────────────
+                //         'commission'     => (float) ($data['FEE_AMOUNT'] ?? 0),
+                //         'mkp_fee'        => (float) ($data['MKP_FEE_AMOUNT'] ?? 0),
+                //         'financing_fee'  => (float) ($data['FINANCING_FEE_AMOUNT'] ?? 0),
+                //         'shipping_fee'   => (float) ($data['SHIPPING_FEE_AMOUNT'] ?? 0),
 
-                        // ─── Neto e impuestos ──────────────────────
-                        'net_amount'    => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
-                        'tax_retention' => (float) ($data['TAXES_AMOUNT'] ?? 0),
+                //         // ─── Neto e impuestos ──────────────────────
+                //         'net_amount'    => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
+                //         'tax_retention' => (float) ($data['TAXES_AMOUNT'] ?? 0),
 
-                        // ─── JSON ──────────────────────────────────
-                        'tax_detail' => !empty($data['TAX_DETAIL'])
-                            ? json_decode($data['TAX_DETAIL'], true)
-                            : null,
+                //         // ─── JSON ──────────────────────────────────
+                //         'tax_detail' => !empty($data['TAX_DETAIL'])
+                //             ? json_decode($data['TAX_DETAIL'], true)
+                //             : null,
 
-                        'metadata' => !empty($data['METADATA'])
-                            ? json_decode($data['METADATA'], true)
-                            : null,
+                //         'metadata' => !empty($data['METADATA'])
+                //             ? json_decode($data['METADATA'], true)
+                //             : null,
 
-                        // ─── Monedas ───────────────────────────────
-                        'transaction_currency' => $data['TRANSACTION_CURRENCY'] ?: null,
-                        'settlement_currency'  => $data['SETTLEMENT_CURRENCY'] ?: null,
+                //         // ─── Monedas ───────────────────────────────
+                //         'transaction_currency' => $data['TRANSACTION_CURRENCY'] ?: null,
+                //         'settlement_currency'  => $data['SETTLEMENT_CURRENCY'] ?: null,
 
-                        // ─── Relación ML ───────────────────────────
-                        'order_id'    => $data['ORDER_ID'] ?: null,
-                        'shipment_id' => $data['SHIPPING_ID'] ?: null,
-                        'package_id'  => $data['PACK_ID'] ?: null,
+                //         // ─── Relación ML ───────────────────────────
+                //         'order_id'    => $data['ORDER_ID'] ?: null,
+                //         'shipment_id' => $data['SHIPPING_ID'] ?: null,
+                //         'package_id'  => $data['PACK_ID'] ?: null,
 
-                        // ─── Canal / POS ───────────────────────────
-                        'sales_channel' => $data['STORE_NAME'] ?: null,
-                        'store_id'      => $data['STORE_ID'] ?: null,
-                        'pos_id'        => $data['POS_ID'] ?: null,
-                        'pos_name'      => $data['POS_NAME'] ?: null,
+                //         // ─── Canal / POS ───────────────────────────
+                //         'sales_channel' => $data['STORE_NAME'] ?: null,
+                //         'store_id'      => $data['STORE_ID'] ?: null,
+                //         'pos_id'        => $data['POS_ID'] ?: null,
+                //         'pos_name'      => $data['POS_NAME'] ?: null,
 
-                        // ─── Logística ─────────────────────────────
-                        'shipment_mode' => $data['SHIPMENT_MODE'] ?: null,
+                //         // ─── Logística ─────────────────────────────
+                //         'shipment_mode' => $data['SHIPMENT_MODE'] ?: null,
 
-                        // ─── Metadata extra ────────────────────────
-                        'operation_tags' => $data['OPERATION_TAGS'] ?: null,
+                //         // ─── Metadata extra ────────────────────────
+                //         'operation_tags' => $data['OPERATION_TAGS'] ?: null,
 
-                        // ─── Plataforma ────────────────────────────
-                        'payment_platform' => $data['POI_WALLET_NAME']
-                            ?: ($data['PAYMENT_METHOD'] ?: null),
+                //         // ─── Plataforma ────────────────────────────
+                //         'payment_platform' => $data['POI_WALLET_NAME']
+                //             ?: ($data['PAYMENT_METHOD'] ?: null),
 
-                        // ─── Fechas ────────────────────────────────
-                        'origin_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                //         // ─── Fechas ────────────────────────────────
+                //         'origin_at' => !empty($data['TRANSACTION_DATE'])
+                //             ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
 
-                        'approved_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                //         'approved_at' => !empty($data['TRANSACTION_DATE'])
+                //             ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
 
-                        'released_at' => !empty($data['SETTLEMENT_DATE'])
-                            ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
+                //         'released_at' => !empty($data['SETTLEMENT_DATE'])
+                //             ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
                        
-                    ],
-                );
+                //     ],
+                // );
 
+                \DB::table('mp_transactions')->insert([
+                    'branch_id'      => $branch->id,
+                    'operation_id'   => $data['SOURCE_ID'],
+                    'operation_type' => $data['TRANSACTION_TYPE'],
+                    'file_name'      => $fileName,
+                ]);
                 $count++;
             }
 
