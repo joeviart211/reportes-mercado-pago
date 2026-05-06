@@ -88,27 +88,29 @@ class MercadoPagoReportService
     // ─── Procesar e importar CSV a la BD ──────────────────────────
     public function importCsv(Branch $branch, string $csvContent, string $fileName): int
         {
-            $rows    = array_filter(explode("\n", trim($csvContent)));
+           $stream = fopen('php://temp', 'r+');
+            fwrite($stream, $csvContent);
+            rewind($stream);
+
             $headers = null;
             $count   = 0;
 
-            foreach ($rows as $row) {
-                $columns = str_getcsv($row, ',', '"');
-
+            while (($columns = fgetcsv($stream, 0, ',', '"', '\\')) !== false) {
                 if (!$headers) {
                     $headers = array_map('trim', $columns);
                     continue;
                 }
 
                 if (count($columns) !== count($headers)) {
+                    logger()->warning('CSV row column mismatch', [
+                        'expected' => count($headers),
+                        'got'      => count($columns),
+                    ]);
                     continue;
                 }
 
                 $data = array_combine($headers, $columns);
-                logger()->info('DATA FILE_NAME', [
-                    'file_name_param' => $fileName,
-                    'raw_data_keys'   => array_keys($data),
-                ]);
+
                 DB::enableQueryLog();
 
                 \App\Models\MpTransaction::create(
