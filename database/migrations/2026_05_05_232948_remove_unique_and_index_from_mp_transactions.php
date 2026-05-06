@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('mp_transactions', function (Blueprint $table) {
             $table->dropUnique([ 'operation_id', 'operation_type']);
-            $table->dropIndex(['operation_id']);
         });
 }
 
@@ -24,7 +23,6 @@ return new class extends Migration
     {
         Schema::table('mp_transactions', function (Blueprint $table) {
             $table->unique(['operation_id', 'operation_type']);
-            $table->index('operation_id');
         });
     }
 };
