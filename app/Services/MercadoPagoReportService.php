@@ -113,7 +113,12 @@ class MercadoPagoReportService
             }
 
             $data = array_combine($headers, $columns);
-
+            
+            logger()->info('ROW OK', [
+                'SOURCE_ID'        => $data['SOURCE_ID'] ?? 'MISSING',
+                'TRANSACTION_TYPE' => $data['TRANSACTION_TYPE'] ?? 'MISSING',
+                'file_name'        => $fileName,
+             ]);
              \App\Models\MpTransaction::create(
                     [
                         'branch_id'      => $branch->id,
