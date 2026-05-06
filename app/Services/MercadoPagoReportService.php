@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use App\Services\MercadoLibreAuthService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class MercadoPagoReportService
 {
@@ -105,12 +106,8 @@ class MercadoPagoReportService
 
                 $data = array_combine($headers, $columns);
                  logger()->info('IMPORT CSV RUNNING', ['file' => $fileName]);
-                 dd([
-    'fileName_param' => $fileName,
-    'final_array' => [
-        'file_name' => $fileName
-    ]
-]);
+                DB::enableQueryLog();
+
                 \App\Models\MpTransaction::create(
                     [
                         'branch_id'      => $branch->id,
@@ -187,7 +184,7 @@ class MercadoPagoReportService
                        
                     ],
                 );
-
+                dd(\DB::getQueryLog());
                 $count++;
             }
 
