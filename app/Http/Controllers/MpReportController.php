@@ -44,9 +44,10 @@ class MpReportController extends Controller
     public function import(Branch $branch, string $fileName)
     {
         abort_unless($branch->isConnectedToMl(), 403);
-        dd($fileName);
+       
 
         $csv   = $this->reportService->downloadReport($branch, $fileName);
+        dd($csv, $fileName);
         $count = $this->reportService->importCsv($branch, $csv, $fileName);
 
         return back()->with('success', "{$count} transacciones importadas para {$branch->name}.");
