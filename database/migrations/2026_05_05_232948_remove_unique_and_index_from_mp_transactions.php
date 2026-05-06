@@ -12,7 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mp_transactions', function (Blueprint $table) {
-            $table->dropUnique([  'operation_type']);
+
+            // 1. quitar FK
+            $table->dropForeign(['branch_id']);
+
+            // 2. quitar UNIQUE
+            $table->dropUnique('mp_transactions_branch_id_operation_id_operation_type_unique');
+
+            // 3. crear índice normal (opcional pero recomendado)
+            $table->index(['branch_id', 'operation_id', 'operation_type']);
+
+            // 4. volver a crear FK
+            $table->foreign('branch_id')
+                ->references('id')
+                ->on('branches')
+                ->onDelete('cascade');
         });
 }
 
