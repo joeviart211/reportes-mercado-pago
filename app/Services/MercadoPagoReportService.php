@@ -91,7 +91,7 @@ class MercadoPagoReportService
         $lines   = explode("\n", $csvContent);
         $headers = null;
         $count   = 0;
-
+        DB::enableQueryLog();
         foreach ($lines as $line) {
             $line = trim($line);
             if (empty($line)) continue;
@@ -198,7 +198,7 @@ class MercadoPagoReportService
 
             $count++;
         }
-
+        dd(DB::getQueryLog());
         return $count;
     }
     private function logCurrentUser(string $token, string $context = 'MP DEBUG', $client_id): void
