@@ -112,16 +112,15 @@ class MercadoPagoReportService
                 $data = array_combine($headers, $columns);
 
                 DB::enableQueryLog();
-                $modelInstance = new \App\Models\MpTransaction([
-                    'branch_id'  => $branch->id,
+                
+
+                 logger()->info('DATA CHECK', [
                     'file_name'  => $fileName,
-                    'operation_id' => $data['SOURCE_ID'],
+                    'SOURCE_ID'  => $data['SOURCE_ID'] ?? 'MISSING',
+                    'TRANS_TYPE' => $data['TRANSACTION_TYPE'] ?? 'MISSING',
                 ]);
 
-                logger()->info('ATTRIBUTES BEFORE SAVE', $modelInstance->getAttributes());
-                logger()->info('FILLABLE', $modelInstance->getFillable());
-
-                $modelInstance->save();
+                // $modelInstance->save();
 
                 \App\Models\MpTransaction::create(
                     [
