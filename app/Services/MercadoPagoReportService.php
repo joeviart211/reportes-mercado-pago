@@ -230,63 +230,77 @@ class MercadoPagoReportService
         }
     }
     private function parseCsvLine(string $line): array
-    {
-        $fields  = [];
-        $field   = '';
-        $inQuote = false;
-        $len     = strlen($line);
-        $i       = 0;
+{
+    $fields    = [];
+    $field     = '';
+    $inQuote   = false;
+    $jsonDepth = 0; // rastrea profundidad de { } dentro del campo
+    $len       = strlen($line);
+    $i         = 0;
 
-        while ($i < $len) {
-            $char = $line[$i];
+    while ($i < $len) {
+        $char = $line[$i];
 
-            if (!$inQuote) {
-                if ($char === '"') {
-                    $inQuote = true;
-                    $i++;
-                    continue;
-                }
-                if ($char === ',') {
-                    $fields[] = $field;
-                    $field    = '';
-                    $i++;
-                    continue;
-                }
-                $field .= $char;
+        if (!$inQuote) {
+            if ($char === '"') {
+                $inQuote   = true;
+                $jsonDepth = 0;
                 $i++;
                 continue;
             }
+            if ($char === ',') {
+                $fields[] = $field;
+                $field    = '';
+                $i++;
+                continue;
+            }
+            $field .= $char;
+            $i++;
+            continue;
+        }
 
-            // Dentro de comillas
-            if ($char === '"') {
-                // RFC 4180: "" = comilla escapada
-                if (isset($line[$i + 1]) && $line[$i + 1] === '"') {
-                    $field .= '"';
-                    $i += 2;
-                    continue;
-                }
+        // Dentro de comillas
+        if ($char === '{') {
+            $jsonDepth++;
+            $field .= $char;
+            $i++;
+            continue;
+        }
 
-                // ¿Es cierre real o comilla interna malformada de ML?
-                // Si después de la " viene , o fin de línea → es cierre real
-                $next = $line[$i + 1] ?? '';
-                if ($next === ',' || $next === '' || $next === "\r") {
-                    $inQuote = false;
-                    $i++;
-                    continue;
-                }
+        if ($char === '}') {
+            $jsonDepth--;
+            $field .= $char;
+            $i++;
+            continue;
+        }
 
-                // Si no → comilla interna malformada, tratar como literal
+        if ($char === '"') {
+            // RFC 4180: "" = comilla escapada
+            if (isset($line[$i + 1]) && $line[$i + 1] === '"') {
+                $field .= '"';
+                $i += 2;
+                continue;
+            }
+
+            // Si estamos dentro de un JSON (jsonDepth > 0) → comilla interna malformada
+            if ($jsonDepth > 0) {
                 $field .= '"';
                 $i++;
                 continue;
             }
 
-            $field .= $char;
+            // jsonDepth === 0 → cierre real del campo
+            $inQuote = false;
             $i++;
+            continue;
         }
 
-        $fields[] = $field; // último campo
-        return $fields;
+        $field .= $char;
+        $i++;
     }
+
+    $fields[] = $field;
+    return $fields;
+}
     
 }
