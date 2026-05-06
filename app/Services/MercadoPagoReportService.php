@@ -87,43 +87,34 @@ class MercadoPagoReportService
     }
     // ─── Procesar e importar CSV a la BD ──────────────────────────
     public function importCsv(Branch $branch, string $csvContent, string $fileName): int
-        {
-            $stream = fopen('php://temp', 'r+');
-            dd($csvContent);
-            fwrite($stream, $csvContent);
-            rewind($stream);
+    {
+        $lines   = explode("\n", $csvContent);
+        $headers = null;
+        $count   = 0;
 
-            $headers = null;
-            $count   = 0;
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
 
-            while (($columns = fgetcsv($stream, 0, ',', '"', '\\')) !== false) {
-                if (!$headers) {
-                    $headers = array_map('trim', $columns);
-                    continue;
-                }
+            $columns = $this->parseCsvLine($line);
 
-                if (count($columns) !== count($headers)) {
-                    logger()->warning('CSV row column mismatch', [
-                        'expected' => count($headers),
-                        'got'      => count($columns),
-                    ]);
-                    continue;
-                }
+            if (!$headers) {
+                $headers = array_map('trim', $columns);
+                continue;
+            }
 
-                $data = array_combine($headers, $columns);
-
-                DB::enableQueryLog();
-                
-
-                 logger()->info('DATA CHECK', [
-                    'file_name'  => $fileName,
-                    'SOURCE_ID'  => $data['SOURCE_ID'] ?? 'MISSING',
-                    'TRANS_TYPE' => $data['TRANSACTION_TYPE'] ?? 'MISSING',
+            if (count($columns) !== count($headers)) {
+                logger()->warning('CSV row column mismatch', [
+                    'expected' => count($headers),
+                    'got'      => count($columns),
+                    'line'     => substr($line, 0, 100),
                 ]);
+                continue;
+            }
 
-                // $modelInstance->save();
+            $data = array_combine($headers, $columns);
 
-                \App\Models\MpTransaction::create(
+             \App\Models\MpTransaction::create(
                     [
                         'branch_id'      => $branch->id,
                         'operation_id'   => $data['SOURCE_ID'],
@@ -199,12 +190,12 @@ class MercadoPagoReportService
                        
                     ],
                 );
-                dd(\DB::getQueryLog());
-                $count++;
-            }
 
-            return $count;
+            $count++;
         }
+
+        return $count;
+    }
     private function logCurrentUser(string $token, string $context = 'MP DEBUG', $client_id): void
     {
         try {
@@ -233,4 +224,64 @@ class MercadoPagoReportService
             ]);
         }
     }
+    private function parseCsvLine(string $line): array
+    {
+        $fields  = [];
+        $field   = '';
+        $inQuote = false;
+        $len     = strlen($line);
+        $i       = 0;
+
+        while ($i < $len) {
+            $char = $line[$i];
+
+            if (!$inQuote) {
+                if ($char === '"') {
+                    $inQuote = true;
+                    $i++;
+                    continue;
+                }
+                if ($char === ',') {
+                    $fields[] = $field;
+                    $field    = '';
+                    $i++;
+                    continue;
+                }
+                $field .= $char;
+                $i++;
+                continue;
+            }
+
+            // Dentro de comillas
+            if ($char === '"') {
+                // RFC 4180: "" = comilla escapada
+                if (isset($line[$i + 1]) && $line[$i + 1] === '"') {
+                    $field .= '"';
+                    $i += 2;
+                    continue;
+                }
+
+                // ¿Es cierre real o comilla interna malformada de ML?
+                // Si después de la " viene , o fin de línea → es cierre real
+                $next = $line[$i + 1] ?? '';
+                if ($next === ',' || $next === '' || $next === "\r") {
+                    $inQuote = false;
+                    $i++;
+                    continue;
+                }
+
+                // Si no → comilla interna malformada, tratar como literal
+                $field .= '"';
+                $i++;
+                continue;
+            }
+
+            $field .= $char;
+            $i++;
+        }
+
+        $fields[] = $field; // último campo
+        return $fields;
+    }
+    
 }
