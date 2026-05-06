@@ -105,7 +105,10 @@ class MercadoPagoReportService
                 }
 
                 $data = array_combine($headers, $columns);
-                 logger()->info('IMPORT CSV RUNNING', ['file' => $fileName]);
+                logger()->info('DATA FILE_NAME', [
+                    'file_name_param' => $fileName,
+                    'raw_data_keys'   => array_keys($data),
+                ]);
                 DB::enableQueryLog();
 
                 \App\Models\MpTransaction::create(
