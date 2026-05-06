@@ -28,7 +28,7 @@ return new class extends Migration
                 ->on('branches')
                 ->onDelete('cascade');
         });
-}
+    }
 
     /**
      * Reverse the migrations.
@@ -36,7 +36,25 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mp_transactions', function (Blueprint $table) {
-            $table->unique(['operation_type']);
+
+            // 1. quitar FK actual
+            $table->dropForeign(['branch_id']);
+
+            // 2. eliminar índice normal (si lo creaste)
+            $table->dropIndex(['branch_id', 'operation_id', 'operation_type']);
+
+            // 3. restaurar UNIQUE original
+            $table->unique([
+                'branch_id',
+                'operation_id',
+                'operation_type'
+            ]);
+
+            // 4. restaurar FK
+            $table->foreign('branch_id')
+                ->references('id')
+                ->on('branches')
+                ->onDelete('cascade');
         });
     }
-};
+    };

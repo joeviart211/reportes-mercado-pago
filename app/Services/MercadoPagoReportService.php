@@ -88,6 +88,7 @@ class MercadoPagoReportService
     public function importCsv(Branch $branch, string $csvContent, string $fileName): int
         {
             $rows    = array_filter(explode("\n", trim($csvContent)));
+            Log::info('CSV rows count', ['count' => count($rows)]);
             $headers = null;
             $count   = 0;
 
@@ -105,13 +106,13 @@ class MercadoPagoReportService
 
                 $data = array_combine($headers, $columns);
 
-                \App\Models\MpTransaction::updateOrCreate(
+                \App\Models\MpTransaction::create(
                     [
                         'branch_id'      => $branch->id,
                         'operation_id'   => $data['SOURCE_ID'],
                         'operation_type' => $data['TRANSACTION_TYPE'],
-                    ],
-                    [
+                        'file_name'      => $fileName,
+                    
                         // ─── Identificación ────────────────────────
                         'external_reference' => $data['EXTERNAL_REFERENCE'] ?: null,
 
@@ -137,13 +138,10 @@ class MercadoPagoReportService
                         'tax_retention' => (float) ($data['TAXES_AMOUNT'] ?? 0),
 
                         // ─── JSON ──────────────────────────────────
-                        'tax_detail' => !empty($data['TAX_DETAIL'])
-                            ? json_decode($data['TAX_DETAIL'], true)
-                            : null,
+                        'tax_detail' => $this->safeJson($data['TAX_DETAIL'] ?? null),
+                        'metadata'   => $this->safeJson($data['METADATA'] ?? null),
 
-                        'metadata' => !empty($data['METADATA'])
-                            ? json_decode($data['METADATA'], true)
-                            : null,
+                        
 
                         // ─── Monedas ───────────────────────────────
                         'transaction_currency' => $data['TRANSACTION_CURRENCY'] ?: null,
@@ -172,14 +170,14 @@ class MercadoPagoReportService
 
                         // ─── Fechas ────────────────────────────────
                         'origin_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                            ? Carbon::parse($data['TRANSACTION_DATE']) : null,
 
                         'approved_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                            ? Carbon::parse($data['TRANSACTION_DATE']) : null,
 
                         'released_at' => !empty($data['SETTLEMENT_DATE'])
-                            ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
-                        'file_name'   => $fileName
+                            ? Carbon::parse($data['SETTLEMENT_DATE']) : null,
+                        
                     ]
                 );
 
