@@ -5,8 +5,8 @@
                 <h2 class="text-xl font-semibold">Reportes — {{ $branch->name }}</h2>
                 <p class="text-sm text-gray-500 mt-1">Mercado Pago · Todas las transacciones</p>
             </div>
-            <a href="{{ route('branches.show', $branch) }}" class="text-sm text-gray-500 hover:text-gray-700">
-                ← Volver a sucursal
+            <a href="{{ route('branches.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                ← Volver a sucursales
             </a>
         </div>
     </x-slot>
