@@ -141,9 +141,9 @@
                                     @if($report['status'] === 'processed')
                                         @if(in_array($report['file_name'], $importedFiles))
                                             {{-- Ya importado --}}
-                                            <span class="text-green-400 text-xs font-semibold">✓ Ya importado</span>
+                                            <!-- <span class="text-green-400 text-xs font-semibold">✓ Ya importado</span> -->
                                             <a href="{{ route('exportXls', [$branch, $report['file_name']]) }}"
-                                                class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded inline-block">
+                                                class="bg-green-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded inline-block">
                                                     Exportar XLS
                                             </a>
                                         @else
