@@ -47,10 +47,12 @@
                     Conectar Mercado Libre
                 </a>
             @else
-                <form method="POST" action="{{ route('branches.ml.disconnect', $branch) }}">
-                    @csrf @method('DELETE')
-                    <button class="text-sm text-red-600 hover:underline">Desconectar</button>
-                </form>
+                @role('admin')
+                    <form method="POST" action="{{ route('branches.ml.disconnect', $branch) }}">
+                        @csrf @method('DELETE')
+                        <button class="text-sm text-red-600 hover:underline">Desconectar</button>
+                    </form>
+                @endrole
             @endif
         </div>
 
