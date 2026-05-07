@@ -267,10 +267,10 @@ class MpReportController extends Controller
         ]);
 
         // Auto-ancho columnas
-        foreach (range('A', $lastCol) as $col) {
+        for ($colIndex = 1; $colIndex <= count($headers); $colIndex++) {
+            $col = Coordinate::stringFromColumnIndex($colIndex);
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-
         // ─── Respuesta ────────────────────────────
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
