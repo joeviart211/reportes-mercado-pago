@@ -143,7 +143,7 @@
                                             {{-- Ya importado --}}
                                             <!-- <span class="text-green-400 text-xs font-semibold">✓ Ya importado</span> -->
                                             <a href="{{ route('exportXls', [$branch, $report['file_name']]) }}"
-                                                class="bg-green-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded inline-block">
+                                                class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded inline-block">
                                                     Exportar XLS
                                             </a>
                                         @else
