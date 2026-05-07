@@ -153,7 +153,7 @@
                                                 @csrf
                                                 <button type="submit"
                                                         class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded">
-                                                    Importar a BD
+                                                    Importar 
                                                 </button>
                                             </form>
                                         @endif
