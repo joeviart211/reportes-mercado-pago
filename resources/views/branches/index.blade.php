@@ -85,23 +85,24 @@
                             </td>
                             <td class="whitespace-nowrap px-5 py-4">
                                 <div class="flex items-center justify-end gap-2">
-                                   
+                                    @role('admin')
                                     <a href="{{ route('branches.show', $branch) }}"
                                        class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-300 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:ring-gray-600 dark:hover:bg-gray-700 dark:hover:text-white">
                                         Ver
                                     </a>
+                                    @endrole 
                                     @role('admin')
                                         <a href="{{ route('branches.edit', $branch) }}"
                                         class="rounded-md px-3 py-1.5 text-xs font-medium text-blue-600 ring-1 ring-blue-300 transition hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:ring-blue-700 dark:hover:bg-blue-950 dark:hover:text-blue-300">
                                             Editar
                                         </a>
                                     @endrole
-                                    @role('admin')
+                                    
                                         <a href="{{ route('branches.reports.index', $branch) }}"
                                         class="rounded-md px-3 py-1.5 text-xs font-medium text-indigo-600 ring-1 ring-indigo-300 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:ring-indigo-700 dark:hover:bg-indigo-950 dark:hover:text-indigo-300">
                                             Reportes
                                         </a>
-                                    @endrole                                    
+                                                                       
                                 </div>
                             </td>
                         </tr>

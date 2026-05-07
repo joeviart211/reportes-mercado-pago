@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
+
 class MpReportController extends Controller
 {
     public function __construct(
@@ -25,7 +26,13 @@ class MpReportController extends Controller
 
         $reports = $this->reportService->listReports($branch);
 
-        return view('reports.index', compact('branch', 'reports'));
+        // Verificar cuáles ya están importados
+        $importedFiles = MpTransaction::where('branch_id', $branch->id)
+            ->whereIn('file_name', collect($reports)->pluck('file_name'))
+            ->pluck('file_name')
+            ->toArray();
+
+        return view('reports.index', compact('branch', 'reports', 'importedFiles'));
     }
 
     public function request(Request $request, Branch $branch)

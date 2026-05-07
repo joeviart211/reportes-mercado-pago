@@ -139,20 +139,28 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     @if($report['status'] === 'processed')
-                                        <form method="POST"
-                                              action="{{ route('branches.reports.import', [$branch, $report['file_name']]) }}">
-                                            @csrf
-                                            <button type="submit"
-                                                    class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded">
-                                                Importar a BD
-                                            </button>
-                                        </form>
+                                        @if(in_array($report['file_name'], $importedFiles))
+                                            {{-- Ya importado --}}
+                                            <span class="text-green-400 text-xs font-semibold">✓ Ya importado</span>
+                                        @else
+                                            {{-- Aún no importado --}}
+                                            <form method="POST"
+                                                action="{{ route('branches.reports.import', [$branch, $report['file_name']]) }}">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded">
+                                                    Importar a BD
+                                                </button>
+                                            </form>
+                                        @endif
+
                                         <a href="{{ route('exportXls', [$branch, $report['file_name']]) }}" class="btn btn-primary">
                                             Exportar XLS (BD)
                                         </a>
                                     @else
                                         <span class="text-gray-300 text-xs">No disponible</span>
                                     @endif
+
                                 </td>
                             </tr>
                         @endforeach
