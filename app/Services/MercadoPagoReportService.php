@@ -79,7 +79,7 @@ class MercadoPagoReportService
             if (count($row) <= 1) {
                 continue;
             }
-
+            dd($header, $row);
             $item = array_combine($header, $row);
 
             $paymentId = $item['SOURCE_ID'] ?? null;
