@@ -15,7 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 
 class MpReportController extends Controller
-{
+    {
     public function __construct(
         protected MercadoPagoReportService $reportService
     ) {}
@@ -59,6 +59,7 @@ class MpReportController extends Controller
        
 
         $csv   = $this->reportService->downloadReport($branch, $fileName);
+        dd($csv);
        
         $count = $this->reportService->importCsv($branch, $csv, $fileName);
 
