@@ -68,66 +68,182 @@ class MercadoPagoReportService
 
         $csv = $response->throw()->body();
 
-        $rows = array_map('str_getcsv', explode("\n", trim($csv)));
+        Log::info('Settlement report downloaded');
 
-        $header = array_shift($rows);
+        /*
+        |--------------------------------------------------------------------------
+        | Parse CSV correctamente
+        |--------------------------------------------------------------------------
+        */
+
+        $handle = fopen('php://temp', 'r+');
+
+        fwrite($handle, $csv);
+
+        rewind($handle);
+
+        $header = fgetcsv($handle);
+
+        if (!$header) {
+            return [];
+        }
+
+        // Limpiar BOM UTF-8
+        $header = array_map(function ($value) {
+            return trim(str_replace("\xEF\xBB\xBF", '', $value));
+        }, $header);
 
         $data = [];
 
-        foreach ($rows as $row) {
+        while (($row = fgetcsv($handle)) !== false) {
 
-            if (count($row) <= 1) {
+            /*
+            |--------------------------------------------------------------------------
+            | Ignorar filas vacías
+            |--------------------------------------------------------------------------
+            */
+
+            if (empty(array_filter($row))) {
                 continue;
             }
-            dd($header, $row);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validar columnas
+            |--------------------------------------------------------------------------
+            */
+
+            if (count($header) !== count($row)) {
+
+                Log::warning('Malformed CSV row', [
+                    'header_count' => count($header),
+                    'row_count' => count($row),
+                    'row' => $row,
+                ]);
+
+                continue;
+            }
+
             $item = array_combine($header, $row);
 
             $paymentId = $item['SOURCE_ID'] ?? null;
 
             $paymentDetail = null;
 
+            /*
+            |--------------------------------------------------------------------------
+            | Consultar detalle payment
+            |--------------------------------------------------------------------------
+            */
+
             if ($paymentId) {
 
-                $paymentResponse = Http::withToken($token)
-                    ->get(self::MP_BASE . "/v1/payments/{$paymentId}");
+                try {
 
-                if ($paymentResponse->successful()) {
-                    $paymentDetail = $paymentResponse->json();
+                    $paymentResponse = Http::withToken($token)
+                        ->get(self::MP_BASE . "/v1/payments/{$paymentId}");
+
+                    if ($paymentResponse->successful()) {
+
+                        $paymentDetail = $paymentResponse->json();
+
+                    } else {
+
+                        Log::warning('Payment detail failed', [
+                            'payment_id' => $paymentId,
+                            'status' => $paymentResponse->status(),
+                            'body' => $paymentResponse->body(),
+                        ]);
+                    }
+
+                    // Evitar rate limit
+                    usleep(300000);
+
+                } catch (\Exception $e) {
+
+                    Log::error('Payment request exception', [
+                        'payment_id' => $paymentId,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 
-            $data[] = [
-                'operation_id'        => $paymentId,
-                'payment_type'        => $item['PAYMENT_METHOD_TYPE'] ?? null,
-                'transaction_type'    => $item['TRANSACTION_TYPE'] ?? null,
-                'purchase_amount'     => $item['TRANSACTION_AMOUNT'] ?? null,
+            /*
+            |--------------------------------------------------------------------------
+            | Construir data final
+            |--------------------------------------------------------------------------
+            */
 
-                // API
-                'origin_at'           => $paymentDetail['date_created']
+            $data[] = [
+
+                'operation_id' => $paymentId,
+
+                'payment_type' => $item['PAYMENT_METHOD_TYPE'] ?? null,
+
+                'transaction_type' => $item['TRANSACTION_TYPE'] ?? null,
+
+                'purchase_amount' => $item['TRANSACTION_AMOUNT'] ?? null,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Fechas
+                |--------------------------------------------------------------------------
+                */
+
+                'origin_at' => $paymentDetail['date_created']
                     ?? $item['TRANSACTION_DATE']
                     ?? null,
 
-                'approved_at'         => $paymentDetail['date_approved']
+                'approved_at' => $paymentDetail['date_approved']
                     ?? $item['SETTLEMENT_DATE']
                     ?? null,
 
-                'released_at'         => $paymentDetail['money_release_date']
+                'released_at' => $paymentDetail['money_release_date']
+                    ?? $item['MONEY_RELEASE_DATE']
                     ?? null,
 
-                // CSV
-                'commission'          => $item['FEE_AMOUNT'] ?? null,
-                'net_amount'          => $item['SETTLEMENT_NET_AMOUNT'] ?? null,
-                'tax_retention'       => $item['TAXES_AMOUNT'] ?? null,
+                /*
+                |--------------------------------------------------------------------------
+                | Importes
+                |--------------------------------------------------------------------------
+                */
 
-                'order_id'            => $item['ORDER_ID'] ?? null,
-                'shipment_id'         => $item['SHIPPING_ID'] ?? null,
-                'package_id'          => $item['PACK_ID'] ?? null,
+                'commission' => $item['FEE_AMOUNT'] ?? null,
 
-                'sales_channel'       => $item['SITE'] ?? null,
-                'payment_platform'    => $item['PAYMENT_METHOD'] ?? null,
+                'net_amount' => $item['SETTLEMENT_NET_AMOUNT'] ?? null,
+
+                'tax_retention' => $item['TAXES_AMOUNT'] ?? null,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Relaciones ML
+                |--------------------------------------------------------------------------
+                */
+
+                'order_id' => $item['ORDER_ID'] ?? null,
+
+                'shipment_id' => $item['SHIPPING_ID'] ?? null,
+
+                'package_id' => $item['PACK_ID'] ?? null,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Otros
+                |--------------------------------------------------------------------------
+                */
+
+                'sales_channel' => $item['SITE'] ?? null,
+
+                'payment_platform' => $item['PAYMENT_METHOD'] ?? null,
+
+                'raw_csv' => $item,
+
+                'payment_api_response' => $paymentDetail,
             ];
         }
-        dd($data);
+
+        fclose($handle);
+
         return $data;
     }
 
