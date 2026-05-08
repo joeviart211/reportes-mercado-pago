@@ -243,6 +243,7 @@ class MercadoPagoReportService
         }
 
         fclose($handle);
+        dd($data);
 
         return $data;
     }
