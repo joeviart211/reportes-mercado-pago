@@ -57,7 +57,7 @@ class MercadoPagoReportService
      * Paso 3: Descargar el CSV una vez procesado
      * GET /v1/account/settlement_report/{file_name}
      */
-    public function downloadReport(Branch $branch, string $fileName): string
+    public function downloadReport(Branch $branch, string $fileName): array
     {
         $token = $this->authService->getValidToken($branch);
 
@@ -65,11 +65,70 @@ class MercadoPagoReportService
 
         $response = Http::withToken($token)
             ->get(self::MP_BASE . "/v1/account/settlement_report/{$fileName}");
-        Log::info('Settlement response body', [
-            'body' => $response->body()
-        ]);
 
-        return $response->throw()->body(); // CSV en texto plano
+        $csv = $response->throw()->body();
+
+        $rows = array_map('str_getcsv', explode("\n", trim($csv)));
+
+        $header = array_shift($rows);
+
+        $data = [];
+
+        foreach ($rows as $row) {
+
+            if (count($row) <= 1) {
+                continue;
+            }
+
+            $item = array_combine($header, $row);
+
+            $paymentId = $item['SOURCE_ID'] ?? null;
+
+            $paymentDetail = null;
+
+            if ($paymentId) {
+
+                $paymentResponse = Http::withToken($token)
+                    ->get(self::MP_BASE . "/v1/payments/{$paymentId}");
+
+                if ($paymentResponse->successful()) {
+                    $paymentDetail = $paymentResponse->json();
+                }
+            }
+
+            $data[] = [
+                'operation_id'        => $paymentId,
+                'payment_type'        => $item['PAYMENT_METHOD_TYPE'] ?? null,
+                'transaction_type'    => $item['TRANSACTION_TYPE'] ?? null,
+                'purchase_amount'     => $item['TRANSACTION_AMOUNT'] ?? null,
+
+                // API
+                'origin_at'           => $paymentDetail['date_created']
+                    ?? $item['TRANSACTION_DATE']
+                    ?? null,
+
+                'approved_at'         => $paymentDetail['date_approved']
+                    ?? $item['SETTLEMENT_DATE']
+                    ?? null,
+
+                'released_at'         => $paymentDetail['money_release_date']
+                    ?? null,
+
+                // CSV
+                'commission'          => $item['FEE_AMOUNT'] ?? null,
+                'net_amount'          => $item['SETTLEMENT_NET_AMOUNT'] ?? null,
+                'tax_retention'       => $item['TAXES_AMOUNT'] ?? null,
+
+                'order_id'            => $item['ORDER_ID'] ?? null,
+                'shipment_id'         => $item['SHIPPING_ID'] ?? null,
+                'package_id'          => $item['PACK_ID'] ?? null,
+
+                'sales_channel'       => $item['SITE'] ?? null,
+                'payment_platform'    => $item['PAYMENT_METHOD'] ?? null,
+            ];
+        }
+        dd($data);
+        return $data;
     }
 
     /**

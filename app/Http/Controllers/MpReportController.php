@@ -205,7 +205,8 @@ class MpReportController extends Controller
             'Nombre de POS',
             'Modalidad de envío',
             'Fecha de origen',
-            'Fecha de liberación',
+            'FECHA DE LIBERACIÓN DEL DINERO
+',
         ];
 
         // Columnas que deben ser texto (IDs grandes)
