@@ -261,119 +261,246 @@ class MercadoPagoReportService
         return $response->throw()->body();
     }
     // ─── Procesar e importar CSV a la BD ──────────────────────────
-    public function importCsv(Branch $branch, string $csvContent, string $fileName): int
-    {
-        $lines   = explode("\n", $csvContent);
-        $headers = null;
-        $count   = 0;
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) continue;
+    public function importCsv(Branch $branch, array $rows, string $fileName): int
+{
+    $count = 0;
 
-            $columns = $this->parseCsvLine($line);
+    foreach ($rows as $data) {
 
-            if (!$headers) {
-                $headers = array_map('trim', $columns);
-                continue;
-            }
+        try {
 
-            if (count($columns) !== count($headers)) {
-                logger()->warning('CSV row column mismatch', [
-                    'expected' => count($headers),
-                    'got'      => count($columns),
-                    'line'     => substr($line, 0, 100),
-                ]);
-                continue;
-            }
-
-            $data = array_combine($headers, $columns);
-            
             logger()->info('ROW OK', [
-                'SOURCE_ID'        => $data['SOURCE_ID'] ?? 'MISSING',
-                'TRANSACTION_TYPE' => $data['TRANSACTION_TYPE'] ?? 'MISSING',
+                'SOURCE_ID'        => $data['operation_id'] ?? 'MISSING',
+                'TRANSACTION_TYPE' => $data['transaction_type'] ?? 'MISSING',
                 'file_name'        => $fileName,
-             ]);
-             \App\Models\MpTransaction::create(
-                    [
-                        'branch_id'      => $branch->id,
-                        'operation_id'   => $data['SOURCE_ID'],
-                        'operation_type' => $data['TRANSACTION_TYPE'],
-                        'file_name'   => $fileName,
-                        // ─── Identificación ────────────────────────
-                        'external_reference' => $data['EXTERNAL_REFERENCE'] ?: null,
+            ]);
 
-                        // ─── Pago ──────────────────────────────────
-                        'payment_method'      => $data['PAYMENT_METHOD'] ?: null,
-                        'payment_method_type' => $data['PAYMENT_METHOD_TYPE'] ?: null,
-                        'installments'        => (int) ($data['INSTALLMENTS'] ?? 0),
+            \App\Models\MpTransaction::updateOrCreate(
 
-                        // ─── Montos ────────────────────────────────
-                        'purchase_amount' => (float) ($data['TRANSACTION_AMOUNT'] ?? 0),
-                        'seller_amount'   => (float) ($data['SELLER_AMOUNT'] ?? 0),
-                        'real_amount'     => (float) ($data['REAL_AMOUNT'] ?? 0),
-                        'coupon_amount'   => (float) ($data['COUPON_AMOUNT'] ?? 0),
+                [
+                    'branch_id'    => $branch->id,
+                    'operation_id' => $data['operation_id'],
+                ],
 
-                        // ─── Comisiones ────────────────────────────
-                        'commission'     => (float) ($data['FEE_AMOUNT'] ?? 0),
-                        'mkp_fee'        => (float) ($data['MKP_FEE_AMOUNT'] ?? 0),
-                        'financing_fee'  => (float) ($data['FINANCING_FEE_AMOUNT'] ?? 0),
-                        'shipping_fee'   => (float) ($data['SHIPPING_FEE_AMOUNT'] ?? 0),
+                [
 
-                        // ─── Neto e impuestos ──────────────────────
-                        'net_amount'    => (float) ($data['SETTLEMENT_NET_AMOUNT'] ?? 0),
-                        'tax_retention' => (float) ($data['TAXES_AMOUNT'] ?? 0),
+                    'file_name' => $fileName,
 
-                        // ─── JSON ──────────────────────────────────
-                        'tax_detail' => !empty($data['TAX_DETAIL'])
-                            ? json_decode($data['TAX_DETAIL'], true)
-                            : null,
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Identificación
+                    |--------------------------------------------------------------------------
+                    */
 
-                        'metadata' => !empty($data['METADATA'])
-                            ? json_decode($data['METADATA'], true)
-                            : null,
+                    'external_reference' => $data['raw_csv']['EXTERNAL_REFERENCE'] ?? null,
 
-                        // ─── Monedas ───────────────────────────────
-                        'transaction_currency' => $data['TRANSACTION_CURRENCY'] ?: null,
-                        'settlement_currency'  => $data['SETTLEMENT_CURRENCY'] ?: null,
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Operación
+                    |--------------------------------------------------------------------------
+                    */
 
-                        // ─── Relación ML ───────────────────────────
-                        'order_id'    => $data['ORDER_ID'] ?: null,
-                        'shipment_id' => $data['SHIPPING_ID'] ?: null,
-                        'package_id'  => $data['PACK_ID'] ?: null,
+                    'operation_type' => $data['transaction_type'] ?? null,
 
-                        // ─── Canal / POS ───────────────────────────
-                        'sales_channel' => $data['STORE_NAME'] ?: null,
-                        'store_id'      => $data['STORE_ID'] ?: null,
-                        'pos_id'        => $data['POS_ID'] ?: null,
-                        'pos_name'      => $data['POS_NAME'] ?: null,
+                    'payment_method' => $data['payment_platform'] ?? null,
 
-                        // ─── Logística ─────────────────────────────
-                        'shipment_mode' => $data['SHIPMENT_MODE'] ?: null,
+                    'payment_method_type' => $data['payment_type'] ?? null,
 
-                        // ─── Metadata extra ────────────────────────
-                        'operation_tags' => $data['OPERATION_TAGS'] ?: null,
+                    'installments' => (int) (
+                        $data['raw_csv']['INSTALLMENTS'] ?? 0
+                    ),
 
-                        // ─── Plataforma ────────────────────────────
-                        'payment_platform' => $data['POI_WALLET_NAME']
-                            ?: ($data['PAYMENT_METHOD'] ?: null),
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Montos
+                    |--------------------------------------------------------------------------
+                    */
 
-                        // ─── Fechas ────────────────────────────────
-                        'origin_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                    'purchase_amount' => (float) (
+                        $data['purchase_amount'] ?? 0
+                    ),
 
-                        'approved_at' => !empty($data['TRANSACTION_DATE'])
-                            ? \Carbon\Carbon::parse($data['TRANSACTION_DATE']) : null,
+                    'seller_amount' => (float) (
+                        $data['raw_csv']['SELLER_AMOUNT'] ?? 0
+                    ),
 
-                        'released_at' => !empty($data['SETTLEMENT_DATE'])
-                            ? \Carbon\Carbon::parse($data['SETTLEMENT_DATE']) : null,
-                       
-                    ],
-                );
+                    'real_amount' => (float) (
+                        $data['raw_csv']['REAL_AMOUNT'] ?? 0
+                    ),
+
+                    'coupon_amount' => (float) (
+                        $data['raw_csv']['COUPON_AMOUNT'] ?? 0
+                    ),
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Comisiones
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'commission' => (float) (
+                        $data['commission'] ?? 0
+                    ),
+
+                    'mkp_fee' => (float) (
+                        $data['raw_csv']['MKP_FEE_AMOUNT'] ?? 0
+                    ),
+
+                    'financing_fee' => (float) (
+                        $data['raw_csv']['FINANCING_FEE_AMOUNT'] ?? 0
+                    ),
+
+                    'shipping_fee' => (float) (
+                        $data['raw_csv']['SHIPPING_FEE_AMOUNT'] ?? 0
+                    ),
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Neto e impuestos
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'net_amount' => (float) (
+                        $data['net_amount'] ?? 0
+                    ),
+
+                    'tax_retention' => (float) (
+                        $data['tax_retention'] ?? 0
+                    ),
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | JSON
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'tax_detail' => !empty($data['raw_csv']['TAX_DETAIL'])
+                        ? json_decode($data['raw_csv']['TAX_DETAIL'], true)
+                        : null,
+
+                    'metadata' => !empty($data['raw_csv']['METADATA'])
+                        ? json_decode($data['raw_csv']['METADATA'], true)
+                        : null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Monedas
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'transaction_currency' => $data['raw_csv']['TRANSACTION_CURRENCY'] ?? null,
+
+                    'settlement_currency' => $data['raw_csv']['SETTLEMENT_CURRENCY'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Relaciones Mercado Libre
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'order_id' => $data['order_id'] ?? null,
+
+                    'shipment_id' => $data['shipment_id'] ?? null,
+
+                    'package_id' => $data['package_id'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Canal / POS
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'sales_channel' => $data['sales_channel'] ?? null,
+
+                    'store_id' => $data['raw_csv']['STORE_ID'] ?? null,
+
+                    'store_name' => $data['raw_csv']['STORE_NAME'] ?? null,
+
+                    'pos_id' => $data['raw_csv']['POS_ID'] ?? null,
+
+                    'pos_name' => $data['raw_csv']['POS_NAME'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Logística
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'shipment_mode' => $data['raw_csv']['SHIPMENT_MODE'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Metadata extra
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'operation_tags' => $data['raw_csv']['OPERATION_TAGS'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Plataforma
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'payment_platform' => $data['payment_platform'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Nuevas columnas API
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'api_payment_id' => $data['payment_api_response']['id'] ?? null,
+
+                    'api_status' => $data['payment_api_response']['status'] ?? null,
+
+                    'api_status_detail' => $data['payment_api_response']['status_detail'] ?? null,
+
+                    'api_money_release_date' => $data['payment_api_response']['money_release_date'] ?? null,
+
+                    'api_date_created' => $data['payment_api_response']['date_created'] ?? null,
+
+                    'api_date_approved' => $data['payment_api_response']['date_approved'] ?? null,
+
+                    'api_response' => $data['payment_api_response'] ?? null,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Fechas
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'origin_at' => !empty($data['origin_at'])
+                        ? \Carbon\Carbon::parse($data['origin_at'])
+                        : null,
+
+                    'approved_at' => !empty($data['approved_at'])
+                        ? \Carbon\Carbon::parse($data['approved_at'])
+                        : null,
+
+                    'released_at' => !empty($data['released_at'])
+                        ? \Carbon\Carbon::parse($data['released_at'])
+                        : null,
+                ]
+            );
 
             $count++;
+
+        } catch (\Exception $e) {
+
+            logger()->error('Import CSV row failed', [
+
+                'operation_id' => $data['operation_id'] ?? null,
+
+                'error' => $e->getMessage(),
+
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
-        return $count;
     }
+
+    return $count;
+}
     private function logCurrentUser(string $token, string $context = 'MP DEBUG', $client_id): void
     {
         try {

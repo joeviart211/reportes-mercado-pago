@@ -59,7 +59,7 @@ class MpReportController extends Controller
        
 
         $csv   = $this->reportService->downloadReport($branch, $fileName);
-        dd($csv);
+    
        
         $count = $this->reportService->importCsv($branch, $csv, $fileName);
 
