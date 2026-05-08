@@ -171,125 +171,238 @@ class MpReportController extends Controller
     {
         $rows = MpTransaction::where('branch_id', $branch->id)
             ->where('file_name', $fileName)
+            ->orderBy('origin_at', 'desc')
             ->get();
 
         $spreadsheet = new Spreadsheet();
+
         $sheet = $spreadsheet->getActiveSheet();
 
-        // ─── Encabezados ───────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | Encabezados
+        |--------------------------------------------------------------------------
+        */
+
         $headers = [
+
             'ID DE OPERACIÓN EN MERCADO PAGO',
             'TIPO DE OPERACIÓN',
+            'STATUS API',
+            'DETALLE STATUS API',
+
             'Referencia externa',
+
             'MEDIO DE PAGO',
             'TIPO DE MEDIO DE PAGO',
+
             'CUOTAS',
+
             'Monto de compra',
             'Monto del vendedor',
             'Monto real',
             'Monto de cupón',
+
             'Comisión + IVA',
             'Tarifa de marketplace',
             'Tarifa de financiamiento',
             'Tarifa de envío',
+
             'Monto neto',
             'Retención de impuestos',
+
             'Moneda de transacción',
             'Moneda de liquidación',
+
             'ID de orden',
             'ID de envío',
             'ID de paquete',
+
             'Canal de ventas',
+
             'ID de tienda',
             'ID de POS',
             'Nombre de POS',
+
             'Modalidad de envío',
+
+            'Plataforma de cobro',
+
             'Fecha de origen',
-            'FECHA DE LIBERACIÓN DEL DINERO
-',
+            'Fecha de aprobación',
+            'Fecha de liberación del dinero',
+
+            'Archivo fuente',
         ];
 
-        // Columnas que deben ser texto (IDs grandes)
-        $textColumns = ['A', 'C', 'S', 'T', 'U', 'Y']; // operation_id, external_ref, order_id, shipment_id, package_id, pos_id
+        /*
+        |--------------------------------------------------------------------------
+        | Columnas texto (evitar notación científica)
+        |--------------------------------------------------------------------------
+        */
+
+        $textColumns = [
+            'A', // operation_id
+            'E', // external_reference
+            'U', // order_id
+            'V', // shipment_id
+            'W', // package_id
+            'Y', // pos_id
+        ];
 
         $sheet->fromArray($headers, null, 'A1');
 
-        // ─── Filas ────────────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | Filas
+        |--------------------------------------------------------------------------
+        */
+
         foreach ($rows as $i => $row) {
+
             $rowNum = $i + 2;
+
             $data = [
+
                 $row->operation_id,
                 $row->operation_type,
+
+                $row->api_status ?? null,
+                $row->api_status_detail ?? null,
+
                 $row->external_reference,
+
                 $row->payment_method,
                 $row->payment_method_type,
+
                 $row->installments,
+
                 $row->purchase_amount,
                 $row->seller_amount,
                 $row->real_amount,
                 $row->coupon_amount,
+
                 $row->commission,
                 $row->mkp_fee,
                 $row->financing_fee,
                 $row->shipping_fee,
+
                 $row->net_amount,
                 $row->tax_retention,
+
                 $row->transaction_currency,
                 $row->settlement_currency,
+
                 $row->order_id,
                 $row->shipment_id,
                 $row->package_id,
+
                 $row->sales_channel,
+
                 $row->store_id,
                 $row->pos_id,
                 $row->pos_name,
+
                 $row->shipment_mode,
+
+                $row->payment_platform,
+
                 optional($row->origin_at)->toDateTimeString(),
+
+                optional($row->approved_at)->toDateTimeString(),
+
                 optional($row->released_at)->toDateTimeString(),
+
+                $row->file_name,
             ];
 
             foreach ($data as $colIndex => $value) {
-                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+
+                $colLetter = Coordinate::stringFromColumnIndex($colIndex + 1);
+
                 $cell = $sheet->getCell("{$colLetter}{$rowNum}");
 
-                // Forzar texto en columnas con IDs grandes
+                /*
+                |--------------------------------------------------------------------------
+                | Forzar texto
+                |--------------------------------------------------------------------------
+                */
+
                 if (in_array($colLetter, $textColumns)) {
+
                     $cell->setValueExplicit(
                         (string) $value,
                         \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
                     );
+
                 } else {
+
                     $cell->setValue($value);
                 }
             }
         }
 
-        // ─── Estilo encabezados ───────────────────
-        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
+        /*
+        |--------------------------------------------------------------------------
+        | Estilo encabezados
+        |--------------------------------------------------------------------------
+        */
+
+        $lastCol = Coordinate::stringFromColumnIndex(count($headers));
+
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
-            'font' => ['bold' => true],
+
+            'font' => [
+                'color' => ['rgb' => 'FFFFFF'],
+                'bold' => true,
+            ],
+
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => '4A90D9'],
             ],
-            'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
         ]);
 
-        // Auto-ancho columnas
+        /*
+        |--------------------------------------------------------------------------
+        | Auto ancho columnas
+        |--------------------------------------------------------------------------
+        */
+
         for ($colIndex = 1; $colIndex <= count($headers); $colIndex++) {
+
             $col = Coordinate::stringFromColumnIndex($colIndex);
+
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        // ─── Respuesta ────────────────────────────
+
+        /*
+        |--------------------------------------------------------------------------
+        | Freeze header
+        |--------------------------------------------------------------------------
+        */
+
+        $sheet->freezePane('A2');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Crear archivo
+        |--------------------------------------------------------------------------
+        */
+
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
         $tempFile = tempnam(sys_get_temp_dir(), 'mp_report_');
+
         $writer->save($tempFile);
 
         return response()->download(
             $tempFile,
             'mp-report-' . $branch->id . '.xlsx',
-            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+            [
+                'Content-Type' =>
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ]
         )->deleteFileAfterSend(true);
     }
 }
