@@ -188,8 +188,7 @@ class MpReportController extends Controller
 
             'ID DE OPERACIÓN EN MERCADO PAGO',
             'TIPO DE OPERACIÓN',
-            'STATUS API',
-            'DETALLE STATUS API',
+
 
             'Referencia externa',
 
@@ -232,7 +231,6 @@ class MpReportController extends Controller
             'Fecha de aprobación',
             'Fecha de liberación del dinero',
 
-            'Archivo fuente',
         ];
 
         /*
@@ -267,8 +265,6 @@ class MpReportController extends Controller
                 $row->operation_id,
                 $row->operation_type,
 
-                $row->api_status ?? null,
-                $row->api_status_detail ?? null,
 
                 $row->external_reference,
 
@@ -313,7 +309,6 @@ class MpReportController extends Controller
 
                 optional($row->released_at)->toDateTimeString(),
 
-                $row->file_name,
             ];
 
             foreach ($data as $colIndex => $value) {
